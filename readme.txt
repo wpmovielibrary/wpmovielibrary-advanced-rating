@@ -1,18 +1,18 @@
-=== WPMovieLibrary Trailers ===
+=== WPMovieLibrary Advanced Rating ===
 Contributors: askelon
-Donate link: http://wpmovielibrary.com/extensions/wpmovielibrary-trailers/
-Tags: wpmovielibrary, movie trailer, trailers
-Requires at least: 3.6
+Donate link: http://wpmovielibrary.com/contribute/#donate
+Tags: wpmovielibrary, movie library, movie rating, movie ratings, rating, ratings, review, reviews, movie review, movie reviews
+Requires at least: 3.8
 Tested up to: 4.1
-Stable tag: 2.0
+Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Add Trailers support to WPMovieLibrary
+Add Advanced Rating support to WPMovieLibrary
 
 == Description ==
 
-Add Trailers support to WPMovieLibrary
+Add Advanced Rating support to WPMovieLibrary
 
 == Installation ==
 
@@ -21,10 +21,6 @@ Add Trailers support to WPMovieLibrary
 3. Use it!
 
 == Changelog ==
-
-= 2.0 =
-* Fix - Remove Core plugin requirements testing
-* Fix - API issue
 
 = 1.0 =
 * Initial version
