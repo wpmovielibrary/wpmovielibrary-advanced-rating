@@ -287,7 +287,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 */
 		public function admin_enqueue_scripts() {
 
-			wp_enqueue_script( WPMOLYAR_SLUG . 'admin-js', WPMOLYAR_URL . '/assets/js/wpmoly-advanced-rating.js', array( WPMOLY_SLUG . '-admin' ), WPMOLYAR_VERSION, true );
+			wp_enqueue_script( WPMOLYAR_SLUG . 'admin-js', WPMOLYAR_URL . '/assets/js/admin/wpmoly-advanced-rating.js', array( WPMOLY_SLUG . '-admin' ), WPMOLYAR_VERSION, true );
 		}
 
 		/**
