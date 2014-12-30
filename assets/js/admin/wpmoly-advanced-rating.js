@@ -11,12 +11,12 @@ window.wpmoly = window.wpmoly || {};
 
 			var $select = $( element ).find( 'select' ),
 			     $stars = $( element ).find( '.wpmoly-ratings-item-select-stars' ),
-			     rating = parseFloat( $select.val() ),
+			     rating = parseInt( $select.val() ) * 2,
 			         id = element.id.replace( 'wpmoly-ratings-', '' );
 
 			ratings.models[ id ] = new wpmoly.ratings.Model.Rating( { value: rating } );
-			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: ratings.models[ id ] } );
-			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: ratings.models[ id ] } );
+			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: ratings.models[ id ], value: rating } );
+			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: ratings.models[ id ], value: rating } );
 		} );
 	};
 
@@ -53,7 +53,7 @@ window.wpmoly = window.wpmoly || {};
 		 *
 		 * @return   void
 		 */
-		initialize: function() {
+		initialize: function( options ) {
 
 			this.template = _.template( $( this.el ).html() );
 			this.render();
@@ -115,7 +115,8 @@ window.wpmoly = window.wpmoly || {};
 	wpmoly.ratings.View.Stars = Backbone.View.extend({
 
 		events: {
-			//"change .meta-data-field": "update"
+			"mouseover span": "update",
+			"mouseleave span": "restore"
 		},
 
 		/**
@@ -125,11 +126,12 @@ window.wpmoly = window.wpmoly || {};
 		 *
 		 * @return   void
 		 */
-		initialize: function() {
+		initialize: function( options ) {
 
-			this.render( this.model );
-
+			_.extend( this, _.pick( options, 'value' ) );
 			_.bindAll( this, 'render' );
+
+			this.render( options.value );
 
 			this.model.on( 'change', this.changed, this );
 		},
@@ -143,33 +145,38 @@ window.wpmoly = window.wpmoly || {};
 		 * 
 		 * @return   void
 		 */
-		render: function( model ) {
+		render: function( rating ) {
 
-			var template = $( this.el ),
-			      rating = model.get( 'value' ),
-			       empty = '<span class="wpmolicon icon-star-empty"></span>',
-			        full = '<span class="wpmolicon icon-star-full"></span>',
-			        half = '<span class="wpmolicon icon-star-half"></span>';
+			var empty = '<span class="wpmolicon icon-star-empty"></span>',
+			     full = '<span class="wpmolicon icon-star-filled"></span>',
+			     html = [];
 
-			if ( NaN != rating ) {
+			if ( ! _.isNaN( rating ) ) {
 
 				var min = Math.floor( rating ),
-				    max = Math.ceil( rating ),
-				   html = [];
+				    max = Math.ceil( rating );
+
+				rating = Math.min( 0, rating );
+				rating = Math.max( rating, 10 );
 
 				for ( var i = 1; i <= min; ++i ) {
 					html.push( full );
 				}
 
-				for ( var i = min; i <= max; ++i ) {
+				++min;
+				for ( var i = min; i <= 10; ++i ) {
 					html.push( empty );
 				}
-				console.log( html );
+			} else {
+				for ( var i = 0; i < 10; ++i ) {
+					
+					html.push( empty );
+				}
 			}
 
-			$( this.el ).append( html );
+			html = html.join( '' );
 
-			this.$el.html( template.html() );
+			this.$el.html( html );
 
 			return this;
 		},
@@ -185,9 +192,7 @@ window.wpmoly = window.wpmoly || {};
 		 */
 		changed: function( model ) {
 
-			/*_.each( model.changed, function( meta, key ) {
-				$( '#meta_data_' + key ).val( meta );
-			} );*/
+			this.render( model.get( 'value' ) );
 		},
 
 		/**
@@ -201,10 +206,15 @@ window.wpmoly = window.wpmoly || {};
 		 */
 		update: function( event ) {
 
-			/*var meta = event.currentTarget.id.replace( 'meta_data_', '' ),
-			   value = event.currentTarget.value;
+			var target = event.currentTarget,
+			     index = $( target ).index() + 1;
 
-			this.model.set( meta, value );*/
+			this.model.set( 'value', index );
+		},
+
+		restore: function() {
+
+			this.model.set( 'value', this.value );
 		}
 	});
 
