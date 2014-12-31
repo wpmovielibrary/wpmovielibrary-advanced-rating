@@ -14,13 +14,15 @@ window.wpmoly = window.wpmoly || {};
 			     rating = parseInt( $select.val() ) * 2,
 			         id = element.id.replace( 'wpmoly-ratings-', '' );
 
-			ratings.models[ id ] = new wpmoly.ratings.Model.Rating( { value: rating } );
+			$select.hide();
+
+			ratings.models[ id ] = new wpmoly.ratings.Model.Rating( { type: id, value: rating } );
 			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: ratings.models[ id ], value: rating } );
 			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: ratings.models[ id ], value: rating } );
 		} );
 	};
 
-	_.extend( ratings, { models: {}, views: {}, Model: {}, View: {} } );
+	_.extend( ratings, { models: {}, views: { ratings: {}, stars: {} }, Model: {}, View: {} } );
 
 	/**
 	 * WPMOLY Backbone Rating Model
@@ -30,21 +32,68 @@ window.wpmoly = window.wpmoly || {};
 	wpmoly.ratings.Model.Rating = Backbone.Model.extend({
 
 		defaults: {
-			value: 0,
+			type: '',
+			value: '',
 		},
+
+		/**
+		 * Initialize the Model
+		 *
+		 * @since    1.0
+		 *
+		 * @return   void
+		 */
+		initialize: function() {
+
+			this.url = ajaxurl;
+			this.post_id = $( '#post_ID' ).val();
+		},
+
+		/**
+		 * Save the movie. Our job is done!
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		save: function() {
+
+			var params = {
+				emulateJSON: true,
+				data: { 
+					action: 'wpmoly_save_meta',
+					nonce: wpmoly.get_nonce( 'save-movie-meta' ),
+					post_id: this.post_id,
+					data: this.parse( this.toJSON() )
+				} 
+			};
+
+			return Backbone.sync( 'create', this, params );
+		},
+
+		/**
+		 * Simple parser to prepare attributes: we don't want to feed
+		 * subarrays to the server.
+		 * 
+		 * @since    1.0
+		 * 
+		 * @param    object    data Movie metadata
+		 * 
+		 * @return   mixed
+		 */
+		parse: function( data ) {
+
+			var data = _.pick( data, _.keys( this.defaults ) );
+			_.map( data, function( meta, key ) {
+				if ( _.isArray( meta ) )
+					data[ key ] = meta.toString();
+			} );
+
+			return data;
+		}
 	});
 
-	ratings.views = {
-
-		ratings: {},
-		stars: {}
-	};
-
 	wpmoly.ratings.View.Rating = Backbone.View.extend({
-
-		events: {
-			//"change .meta-data-field": "update"
-		},
 
 		/**
 		 * Initialize the View
@@ -89,34 +138,23 @@ window.wpmoly = window.wpmoly || {};
 		 */
 		changed: function( model ) {
 
-			/*_.each( model.changed, function( meta, key ) {
-				$( '#meta_data_' + key ).val( meta );
-			} );*/
-		},
+			var value = model.get( 'value' );
 
-		/**
-		 * Update the Model whenever an input value is changed
-		 * 
-		 * @since    1.0
-		 * 
-		 * @param    object    JS Event
-		 * 
-		 * @return   void
-		 */
-		update: function( event ) {
+			if ( _.isNaN( value ) )
+				value = '0.0';
+			value = ( value / 2 ).toPrecision( 2 ).substr( 0, 3 );
 
-			/*var meta = event.currentTarget.id.replace( 'meta_data_', '' ),
-			   value = event.currentTarget.value;
-
-			this.model.set( meta, value );*/
+			this.$el.val( value );
 		}
 	});
 
 	wpmoly.ratings.View.Stars = Backbone.View.extend({
 
 		events: {
-			"mouseover span": "update",
-			"mouseleave span": "restore"
+			"mouseover span.star": "update",
+			"mouseout span.star": "restore",
+			"click span.star": "rate",
+			"click a": "empty"
 		},
 
 		/**
@@ -141,14 +179,14 @@ window.wpmoly = window.wpmoly || {};
 		 * 
 		 * @since    1.0
 		 * 
-		 * @param    object    Model
+		 * @param    int    Rating value
 		 * 
 		 * @return   void
 		 */
 		render: function( rating ) {
 
-			var empty = '<span class="wpmolicon icon-star-empty"></span>',
-			     full = '<span class="wpmolicon icon-star-filled"></span>',
+			var empty = '<span class="wpmolicon icon-star-empty star"></span>',
+			     full = '<span class="wpmolicon icon-star-filled star"></span>',
 			     html = [];
 
 			if ( ! _.isNaN( rating ) ) {
@@ -174,6 +212,7 @@ window.wpmoly = window.wpmoly || {};
 				}
 			}
 
+			html.push( '<a href="#"><span class="wpmolicon icon-no"></span></a>' );
 			html = html.join( '' );
 
 			this.$el.html( html );
@@ -196,7 +235,7 @@ window.wpmoly = window.wpmoly || {};
 		},
 
 		/**
-		 * Update the Model whenever an input value is changed
+		 * Update the Model whenever the rating value is changed
 		 * 
 		 * @since    1.0
 		 * 
@@ -210,11 +249,54 @@ window.wpmoly = window.wpmoly || {};
 			     index = $( target ).index() + 1;
 
 			this.model.set( 'value', index );
+
+			return index;
 		},
 
-		restore: function() {
+		/**
+		 * Restore the Model to the View's previous value, triggering
+		 * the re-rendering of the view.
+		 * 
+		 * @since    1.0
+		 * 
+		 * @param    object    JS Event
+		 * 
+		 * @return   void
+		 */
+		restore: function( event ) {
 
 			this.model.set( 'value', this.value );
+		},
+
+		/**
+		 * Set the Model value to 0.
+		 * 
+		 * @since    1.0
+		 * 
+		 * @param    object    JS Event
+		 * 
+		 * @return   void
+		 */
+		empty: function( event ) {
+
+			this.model.set( 'value', 0 );
+			event.preventDefault();
+		},
+
+		/**
+		 * Re-update the Model and update the view's rating value before
+		 * saving.
+		 * 
+		 * @since    1.0
+		 * 
+		 * @param    object    JS Event
+		 * 
+		 * @return   void
+		 */
+		rate: function( event ) {
+
+			this.value = this.update( event );
+			this.model.save();
 		}
 	});
 
