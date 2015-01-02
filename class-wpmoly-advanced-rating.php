@@ -87,6 +87,19 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'storyrating' => __( 'storyrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
+			$this->ratings['cast'] = array(
+				'id'       => 'wpmoly-movie-rating-cast',
+				'name'     => 'wpmoly_details[rating-cast]',
+				'type'     => 'select',
+				'title'    => __( 'Cast', 'wpmovielibrary-advanced-rating' ),
+				'desc'     => __( 'Rate this movie’s cast.', 'wpmovielibrary-advanced-rating' ),
+				'icon'     => 'wpmolicon icon-actor',
+				'options'  => $options,
+				'default'  => '',
+				'panel'    => 'custom',
+				'rewrite'  => array( 'castrating' => __( 'castrating', 'wpmovielibrary-advanced-rating' ) )
+			);
+
 			$this->ratings['soundtrack'] = array(
 				'id'       => 'wpmoly-movie-rating-soundtrack',
 				'name'     => 'wpmoly_details[rating-soundtrack]',
@@ -150,7 +163,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 */
 		public function register_hook_callbacks() {
 
-			add_action( 'plugins_loaded', 'wpmolytr_l10n' );
+			add_action( 'plugins_loaded', 'wpmolyar_l10n' );
 
 			add_action( 'activated_plugin', __CLASS__ . '::require_wpmoly_first' );
 
@@ -175,6 +188,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			add_filter( 'wpmoly_filter_headbox_menu_link', array( $this, 'headbox_menu_adv_rating_link' ), 10, 1 );
 			add_filter( 'wpmoly_filter_headbox_menu_tabs', array( $this, 'headbox_menu_adv_rating_tab' ), 10, 1 );
+
+			// AJAX callbacks
+			add_action( 'wp_ajax_wpmoly_save_rating', array( $this, 'save_rating_callback' ), 10, 1 );
 		}
 
 		/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -328,9 +344,15 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 * 
 		 * @since    1.0
 		 */
-		public static function a_callback() {
+		public function save_rating_callback() {
 
-			
+			wpmoly_check_ajax_referer( 'save-rating' );
+
+			$post_id      = ( isset( $_POST['post_id'] ) && '' != $_POST['post_id'] ? intval( $_POST['post_id'] ) : null );
+			$rating_type  = ( isset( $_POST['rating']['type'] ) && '' != $_POST['rating']['type'] ? esc_attr( $_POST['rating']['type'] ) : null );
+			$rating_value = ( isset( $_POST['rating']['value'] ) && '' != $_POST['rating']['value'] ? intval( $_POST['rating']['value'] ) : null );
+
+			$rating = self::save_rating( $post_id, $rating_type, $rating_value );
 		}
 
 		/**
@@ -479,6 +501,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			$class   = new ReduxFramework();
 			$ratings = array();
+			$average = array();
 
 			foreach ( $this->ratings as $slug => $rating ) {
 
@@ -489,6 +512,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				$field_name = $rating['type'];
 				$class_name = "ReduxFramework_{$field_name}";
 				$value      = call_user_func_array( 'wpmoly_get_movie_meta', array( 'post_id' => $post_id, 'meta' => $slug ) );
+
+				if ( 'rating' != $slug )
+					$average[]  = $value;
 
 				if ( ! class_exists( $class_name ) )
 					require_once WPMOLY_PATH . "includes/framework/redux/ReduxCore/inc/fields/{$field_name}/field_{$field_name}.php";
@@ -501,9 +527,19 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				ob_end_clean();
 
 				$this->ratings[ $_slug ]['html'] = $html;
+				$this->ratings[ $_slug ]['value'] = $value;
 			}
 
-			$attributes = array( 'ratings' => $this->ratings );
+			if ( empty( $average ) ) {
+				$average = '0';
+				$average_10 = '0';
+			} else {
+				$average = array_sum( $average ) / count( $average );
+				$average_10 = number_format( ( $average * 2 ), 2, ',', ' ' );
+				$average = number_format( $average, 2, ',', ' ' );
+			}
+
+			$attributes = array( 'ratings' => $this->ratings, 'average' => $average, 'average_10' => $average_10 );
 
 			$content = self::render_template( 'metabox/panels/panel-advanced-rating.php', $attributes, $require = 'always' );
 
@@ -567,6 +603,39 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 *                               Utils
 		 * 
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		/**
+		 * Save a single rating
+		 *
+		 * @since    1.0
+		 *
+		 * @param    int        $post_ID Post ID.
+		 * @param    string     $type Rating type
+		 * @param    int        $value Rating value
+		 * 
+		 * @return   int|WP_Error    Post ID if advanced ratings were saved successfully, WP_Error if an error occurred.
+		 */
+		public function save_rating( $post_ID, $rating, $value ) {
+
+			$post = get_post( $post_ID );
+			if ( ! $post || 'movie' != get_post_type( $post ) )
+				return new WP_Error( 'invalid_post', __( 'Error: submitted post is not a movie.', 'wpmovielibrary' ) );
+
+			$value = max( 0, $value );
+			$value = min( 10, $value );
+			if ( $value > 5 )
+				$value = (float) $value / 2.0;
+			$value = number_format( $value, 1, '.', ' ' );
+
+			if ( 'rating' != $rating )
+				$rating = 'rating_' . $rating;
+
+			update_post_meta( $post_ID, "_wpmoly_movie_{$rating}", $value );
+
+			WPMOLY_Cache::clean_transient( 'clean', $force = true );
+
+			return $post_ID;
+		}
 
 		/**
 		 * Save Trailers along with movie.

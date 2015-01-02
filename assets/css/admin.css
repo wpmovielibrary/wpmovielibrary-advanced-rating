@@ -3,6 +3,19 @@
 	cursor: pointer;
 }
 
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars.rated .wpmolicon.icon-star-empty,
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars.rated .wpmolicon.icon-star-filled {
+	color: #0074a2;
+}
+
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars .wpmolicon.icon-star-empty {
+	color: #aaa;
+}
+
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars .wpmolicon.icon-star-filled {
+	color: #444;
+}
+
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars a {
 	border-left: 1px solid #ddd;
 	box-shadow: 0 0 0;

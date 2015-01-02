@@ -1,17 +1,28 @@
 
 window.wpmoly = window.wpmoly || {};
+window._ = window._ || {};
+
+_.average = function( numbers ) {
+	if ( ! _.isObject( numbers ) && ! _.isArray( numbers ) )
+		return numbers;
+	if ( _.isObject( numbers ) )
+		numbers = _.map( numbers, function ( num ) { return num } );
+	var sum = _.reduce( numbers, function( memo, num ) { return memo + num; }, 0 );
+	return average = sum / ( 0 === numbers.length ? 1 : numbers.length );
+};
 
 (function( $ ) {
 
 	ratings = wpmoly.ratings = function() {
 
-		var $ratings = $( '.wpmoly-ratings-item' );
+		var $ratings = $( '.wpmoly-ratings-item' ),
+		     average = [];
 
 		_.each( $ratings, function( element, index, list ) {
 
 			var $select = $( element ).find( 'select' ),
 			     $stars = $( element ).find( '.wpmoly-ratings-item-select-stars' ),
-			     rating = parseInt( $select.val() ) * 2,
+			     rating = parseFloat( $( element ).attr( 'data-rating' ) ) * 2.0,
 			         id = element.id.replace( 'wpmoly-ratings-', '' );
 
 			$select.hide();
@@ -19,7 +30,16 @@ window.wpmoly = window.wpmoly || {};
 			ratings.models[ id ] = new wpmoly.ratings.Model.Rating( { type: id, value: rating } );
 			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: ratings.models[ id ], value: rating } );
 			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: ratings.models[ id ], value: rating } );
+
+			if ( 'rating' != id )
+				average.push( rating );
 		} );
+
+		_.map( average, function( rating ) { return _.isNaN( rating ) ? 0 : rating; } );
+		average = _.average( average );
+
+		ratings.models.average = new wpmoly.ratings.Model.Average( { average: average } );
+		ratings.views.average = new wpmoly.ratings.View.Average( { model: ratings.models.average, average: average } );
 	};
 
 	_.extend( ratings, { models: {}, views: { ratings: {}, stars: {} }, Model: {}, View: {} } );
@@ -58,13 +78,15 @@ window.wpmoly = window.wpmoly || {};
 		 */
 		save: function() {
 
+			this.trigger( 'rating:sync', this );
+
 			var params = {
 				emulateJSON: true,
 				data: { 
-					action: 'wpmoly_save_meta',
-					nonce: wpmoly.get_nonce( 'save-movie-meta' ),
+					action: 'wpmoly_save_rating',
+					nonce: wpmoly.get_nonce( 'save-rating' ),
 					post_id: this.post_id,
-					data: this.parse( this.toJSON() )
+					rating: this.parse( this.toJSON() )
 				} 
 			};
 
@@ -109,7 +131,7 @@ window.wpmoly = window.wpmoly || {};
 
 			_.bindAll( this, 'render' );
 
-			this.model.on( 'change', this.changed, this );
+			this.model.on( 'rating:sync', this.changed, this );
 		},
 
 		/**
@@ -151,8 +173,8 @@ window.wpmoly = window.wpmoly || {};
 	wpmoly.ratings.View.Stars = Backbone.View.extend({
 
 		events: {
-			"mouseover span.star": "update",
-			"mouseout span.star": "restore",
+			"mouseenter span.star": "update",
+			"mouseleave span.star": "restore",
 			"click span.star": "rate",
 			"click a": "empty"
 		},
@@ -254,8 +276,7 @@ window.wpmoly = window.wpmoly || {};
 		},
 
 		/**
-		 * Restore the Model to the View's previous value, triggering
-		 * the re-rendering of the view.
+		 * Restore the View.
 		 * 
 		 * @since    1.0
 		 * 
@@ -280,6 +301,7 @@ window.wpmoly = window.wpmoly || {};
 		empty: function( event ) {
 
 			this.model.set( 'value', 0 );
+			this.model.save();
 			event.preventDefault();
 		},
 
@@ -298,6 +320,30 @@ window.wpmoly = window.wpmoly || {};
 			this.value = this.update( event );
 			this.model.save();
 		}
+	});
+
+	/**
+	 * WPMOLY Backbone Average Rating Model
+	 *
+	 * @since    1.0
+	 */
+	wpmoly.ratings.Model.Average = Backbone.Model.extend({
+
+		defaults: {
+			average: ''
+		},
+	});
+
+	/**
+	 * WPMOLY Backbone Average Rating View
+	 *
+	 * @since    1.0
+	 */
+	wpmoly.ratings.View.Average = Backbone.View.extend({
+
+		el: '#wpmoly-ratings-average',
+
+		
 	});
 
 	wpmoly.ratings();
