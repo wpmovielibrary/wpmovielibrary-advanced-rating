@@ -3,6 +3,10 @@
 	cursor: pointer;
 }
 
+#wpmoly-meta-adv_rating-panels .wpmoly-details-item-title {
+	border-color: #eee;
+}
+
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars {
 	position: relative;
 }
@@ -23,7 +27,7 @@
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars a {
 	border-left: 1px solid #ddd;
 	box-shadow: 0 0 0;
-	color: #aaa;
+	color: #ddd;
 	margin-left: 0.5rem;
 	padding-left: 0.25em;
 	position: relative;
@@ -42,11 +46,17 @@
 
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars .lock-view {
 	border: 0;
-	color: #aaa;
+	color: #ddd;
 	font-size: 0.8rem;
 	position: absolute;
 	right: 0.5em;
 	top: -2.25em;
+}
+
+#wpmoly-meta-panels .wpmoly-ratings-item:hover .lock-view,
+#wpmoly-meta-panels .wpmoly-ratings-item:hover a {
+	border-color: #ddd;
+	color: #aaa;
 }
 
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars .lock-view:hover .wpmolicon.icon-lock:before {

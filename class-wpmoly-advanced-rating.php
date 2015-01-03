@@ -132,7 +132,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'type'     => 'select',
 				'title'    => __( 'VFX', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s visual effects', 'wpmovielibrary-advanced-rating' ),
-				'icon'     => 'wpmolicon icon-format',
+				'icon'     => 'wpmolicon icon-vfx',
 				'options'  => $options,
 				'default'  => '',
 				'panel'    => 'custom',
@@ -419,7 +419,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'adv_rating' => array(
 					'title'   => __( 'Advanced Rating', 'wpmovielibrary' ),
 					'icon'    => 'wpmolicon icon-star-half',
-					'content' => self::movie_headbox_adv_rating_tab()
+					'content' => $this->movie_headbox_adv_rating_tab()
 				)
 			);
 
@@ -435,12 +435,27 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 * 
 		 * @return   string    Tab content HTML markup
 		 */
-		public static function movie_headbox_adv_rating_tab() {
+		public function movie_headbox_adv_rating_tab() {
 
 			global $post;
 
-			$attributes = array();
+			$ratings = array();
 
+			foreach ( $this->ratings as $slug => $rating ) {
+
+				$value = wpmoly_get_movie_meta( $post->ID, "rating_$slug" );
+				if ( '' == $value )
+					$value = '0.0';
+
+				$rewrite = array_pop( $rating['rewrite'] );
+				$value = apply_filters( "wpmoly_movie_meta_link", $rewrite, $value, 'detail', $rating['options'][ $value ] );
+				$title = __( $rating['title'], 'wpmovielibrary-advanced-rating' );
+				$icon  = $rating['icon'];
+
+				$ratings[] = compact( 'slug', 'icon', 'title', 'value' );
+			}
+
+			$attributes = compact( 'ratings' );
 			$content = self::render_template( 'movies/headbox/tabs/advanced-rating.php', $attributes, $require = 'always' );
 
 			return $content;
@@ -506,8 +521,11 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 			foreach ( $this->ratings as $slug => $rating ) {
 
 				$_slug = $slug;
-				if ( 'rating' != $slug )
+				if ( 'rating' != $slug ) {
 					$slug = "rating_$slug";
+				} else {
+					$this->ratings[ $_slug ]['title'] = __( 'Overall', 'wpmovielibrary-advanced-rating' );
+				}
 
 				$field_name = $rating['type'];
 				$class_name = "ReduxFramework_{$field_name}";
@@ -564,7 +582,6 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		public function create_ratings( $details ) {
 
 			$details['rating']['panel'] = 'custom';
-			$details['rating']['title'] = __( 'Overall', 'wpmovielibrary-advanced-rating' );
 			$this->ratings['rating'] = $details['rating'];
 
 			$details = array_merge( $details, $this->ratings );
