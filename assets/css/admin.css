@@ -3,6 +3,10 @@
 	cursor: pointer;
 }
 
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars {
+	position: relative;
+}
+
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars.rated .wpmolicon.icon-star-empty,
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars.rated .wpmolicon.icon-star-filled {
 	color: #0074a2;
@@ -34,4 +38,17 @@
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars a span {
 	font-size: 0.95rem;
 	line-height: 1.25em;
+}
+
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars .lock-view {
+	border: 0;
+	color: #aaa;
+	font-size: 0.8rem;
+	position: absolute;
+	right: 0.5em;
+	top: -2.25em;
+}
+
+#wpmoly-meta-panels .wpmoly-ratings-item-select-stars .lock-view:hover .wpmolicon.icon-lock:before {
+	content: "\e669";
 }

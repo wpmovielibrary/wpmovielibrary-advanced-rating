@@ -513,8 +513,8 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				$class_name = "ReduxFramework_{$field_name}";
 				$value      = call_user_func_array( 'wpmoly_get_movie_meta', array( 'post_id' => $post_id, 'meta' => $slug ) );
 
-				if ( 'rating' != $slug )
-					$average[]  = $value;
+				if ( 'rating' != $slug && 0 < $value )
+					$average[] = $value;
 
 				if ( ! class_exists( $class_name ) )
 					require_once WPMOLY_PATH . "includes/framework/redux/ReduxCore/inc/fields/{$field_name}/field_{$field_name}.php";

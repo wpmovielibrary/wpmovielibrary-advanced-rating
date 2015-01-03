@@ -172,11 +172,14 @@ _.average = function( numbers ) {
 
 	wpmoly.ratings.View.Stars = Backbone.View.extend({
 
+		locked: false,
+
 		events: {
 			"mouseenter span.star": "update",
 			"mouseleave span.star": "restore",
 			"click span.star": "rate",
-			"click a": "empty"
+			"click .reset-view": "empty",
+			"click .lock-view": "lock"
 		},
 
 		/**
@@ -190,6 +193,9 @@ _.average = function( numbers ) {
 
 			_.extend( this, _.pick( options, 'value' ) );
 			_.bindAll( this, 'render' );
+
+			if ( options.value )
+				this.locked = true;
 
 			this.render( options.value );
 
@@ -234,7 +240,8 @@ _.average = function( numbers ) {
 				}
 			}
 
-			html.push( '<a href="#"><span class="wpmolicon icon-no"></span></a>' );
+			html.push( '<a class="reset-view" href="#"><span class="wpmolicon icon-no"></span></a>' );
+			html.push( '<a class="lock-view" href="#"><span class="wpmolicon icon-lock' + ( ! this.locked ? '-open' : '' ) + '"></span></a>' );
 			html = html.join( '' );
 
 			this.$el.html( html );
@@ -257,6 +264,22 @@ _.average = function( numbers ) {
 		},
 
 		/**
+		 * Lock the view to prevent unwanted edit of the ratings
+		 * 
+		 * @since    1.0
+		 * 
+		 * @param    object    JS Event
+		 * 
+		 * @return   void
+		 */
+		lock: function( event ) {
+
+			this.locked = ! this.locked;
+			this.render( this.model.get( 'value' ) );
+			event.preventDefault();
+		},
+
+		/**
 		 * Update the Model whenever the rating value is changed
 		 * 
 		 * @since    1.0
@@ -266,6 +289,9 @@ _.average = function( numbers ) {
 		 * @return   void
 		 */
 		update: function( event ) {
+
+			if ( this.locked )
+				return;
 
 			var target = event.currentTarget,
 			     index = $( target ).index() + 1;
@@ -316,6 +342,9 @@ _.average = function( numbers ) {
 		 * @return   void
 		 */
 		rate: function( event ) {
+
+			if ( this.locked )
+				return;
 
 			this.value = this.update( event );
 			this.model.save();
@@ -371,9 +400,9 @@ _.average = function( numbers ) {
 			    average = [];
 
 			_.each( ratings, function( rating ) {
-				var r = rating.get( 'value' ),
-				    r = _.isNaN( r ) || undefined == r ? 0 : r;
-				average.push( r );
+				var r = rating.get( 'value' );
+				if ( _.isInt( r ) && 0 < r )
+					average.push( r );
 			}, this );
 
 			return _.average( average );
