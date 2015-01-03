@@ -15,8 +15,9 @@ _.average = function( numbers ) {
 
 	ratings = wpmoly.ratings = function() {
 
-		var $ratings = $( '.wpmoly-ratings-item' ),
-		     average = [];
+		var $ratings = $( '.wpmoly-ratings-item' );
+
+		ratings.collections.average = new wpmoly.ratings.Collection.Average();
 
 		_.each( $ratings, function( element, index, list ) {
 
@@ -27,22 +28,21 @@ _.average = function( numbers ) {
 
 			$select.hide();
 
-			ratings.models[ id ] = new wpmoly.ratings.Model.Rating( { type: id, value: rating } );
-			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: ratings.models[ id ], value: rating } );
-			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: ratings.models[ id ], value: rating } );
+			var model = new wpmoly.ratings.Model.Rating( { type: id, value: rating } );
+			ratings.models[ id ] = model;
+			ratings.views.ratings[ id ] = new wpmoly.ratings.View.Rating( { el: $select, model: model, value: rating } );
+			ratings.views.stars[ id ] = new wpmoly.ratings.View.Stars( { el: $stars, model: model, value: rating } );
 
 			if ( 'rating' != id )
-				average.push( rating );
+				ratings.collections.average.add( model );
 		} );
 
-		_.map( average, function( rating ) { return _.isNaN( rating ) ? 0 : rating; } );
-		average = _.average( average );
+		ratings.views.average = new wpmoly.ratings.View.Average( { collection: ratings.collections.average } );
+		ratings.views.average10 = new wpmoly.ratings.View.Average10( { collection: ratings.collections.average } );
 
-		ratings.models.average = new wpmoly.ratings.Model.Average( { average: average } );
-		ratings.views.average = new wpmoly.ratings.View.Average( { model: ratings.models.average, average: average } );
 	};
 
-	_.extend( ratings, { models: {}, views: { ratings: {}, stars: {} }, Model: {}, View: {} } );
+	_.extend( ratings, { models: {}, collections: {}, views: { ratings: {}, stars: {} }, Model: {}, Collection: {}, View: {} } );
 
 	/**
 	 * WPMOLY Backbone Rating Model
@@ -323,14 +323,60 @@ _.average = function( numbers ) {
 	});
 
 	/**
-	 * WPMOLY Backbone Average Rating Model
+	 * WPMOLY Backbone Average Rating View
 	 *
 	 * @since    1.0
 	 */
-	wpmoly.ratings.Model.Average = Backbone.Model.extend({
+	wpmoly.ratings.Collection.Average = Backbone.Collection.extend({
 
-		defaults: {
-			average: ''
+		value: 0,
+
+		model: ratings.Model.Rating,
+
+		/**
+		 * Initialize the View
+		 *
+		 * @since    1.0
+		 *
+		 * @return   void
+		 */
+		initialize: function() {
+
+			this.on( 'rating:sync', this.changed );
+		},
+
+		/**
+		 * Update the View to match the Models' changes
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		changed: function() {
+
+			this.value = this.calculate();
+			this.trigger( 'average:change', this );
+		},
+
+		/**
+		 * Calculate average rating
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   float    Average rating
+		 */
+		calculate: function() {
+
+			var ratings = this.models,
+			    average = [];
+
+			_.each( ratings, function( rating ) {
+				var r = rating.get( 'value' ),
+				    r = _.isNaN( r ) || undefined == r ? 0 : r;
+				average.push( r );
+			}, this );
+
+			return _.average( average );
 		},
 	});
 
@@ -341,9 +387,82 @@ _.average = function( numbers ) {
 	 */
 	wpmoly.ratings.View.Average = Backbone.View.extend({
 
+		value: '',
+
 		el: '#wpmoly-ratings-average',
 
-		
+		/**
+		 * Initialize the View
+		 *
+		 * @since    1.0
+		 *
+		 * @return   void
+		 */
+		initialize: function( options ) {
+
+			this.template = _.template( $( this.el ).html() );
+			this.render();
+
+			_.bindAll( this, 'render' );
+
+			this.collection.on( 'average:change', this.changed, this );
+		},
+
+		/**
+		 * Render the View
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		render: function() {
+
+			var template = this.template();
+
+			if ( '' != this.value && this.value != template ) {
+				this.$el.html( this.value );
+			} else {
+				this.$el.html( template );
+			}
+
+			return this;
+		},
+
+		/**
+		 * Reflect Average change on the View
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		changed: function( collection ) {
+
+			this.value = ( collection.value / 2 ).toPrecision( 3 ).substr( 0, 4 );
+			this.render();
+		}
+	});
+
+	/**
+	 * WPMOLY Backbone Average Rating View (base 10)
+	 *
+	 * @since    1.0
+	 */
+	wpmoly.ratings.View.Average10 = wpmoly.ratings.View.Average.extend({
+
+		el: '#wpmoly-ratings-average-10',
+
+		/**
+		 * Reflect Average change on the View
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		changed: function( collection ) {
+
+			this.value = collection.value.toPrecision( 3 ).substr( 0, 4 );
+			this.render();
+		}
 	});
 
 	wpmoly.ratings();
