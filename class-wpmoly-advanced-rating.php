@@ -179,6 +179,11 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			// Add new details to the settings panel
 			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-sort-details/register', array( $this, 'ratings_setting' ), 10, 1 );
+			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-headbox-title/register', array( $this, 'ratings_setting' ), 15, 1 );
+			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-headbox-subtitle/register', array( $this, 'ratings_setting' ), 15, 1 );
+			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-headbox-details-1/register', array( $this, 'ratings_setting' ), 15, 1 );
+			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-headbox-details-2/register', array( $this, 'ratings_setting' ), 15, 1 );
+			add_filter( 'redux/options/wpmoly_settings/field/wpmoly-headbox-details-3/register', array( $this, 'ratings_setting' ), 15, 1 );
 
 			// Create a new Metabox tab
 			add_filter( 'wpmoly_filter_metabox_panels', array( $this, 'add_metabox_panel' ), 10, 1 );
@@ -600,7 +605,20 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 		 */
 		public function ratings_setting( $field ) {
 
-			//$field['options']['available'] = array_merge( $field['options']['available'], array( 'audio' => $this->detail['title'] ) );
+			$ratings = array();
+			foreach ( $this->ratings as $slug => $rating ) {
+				if ( 'rating' != $slug ) {
+					$ratings[ $slug ] = sprintf( '%s (%s)', $rating['title'], __( 'Rating', 'wpmovielibrary' ) );
+				} else {
+					$ratings[ $slug ] = __( 'Overall Rating', 'wpmovielibrary-advanced-rating' );
+				}
+			}
+
+			if ( isset( $field['options']['available'] ) ) {
+				$field['options']['available'] = array_merge( $field['options']['available'], $ratings );
+			} elseif ( isset( $field['options'] ) ) {
+				$field['options'] = array_merge( $field['options'], $ratings );
+			}
 
 			return $field;
 		}
