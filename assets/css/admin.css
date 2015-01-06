@@ -3,8 +3,12 @@
 	cursor: pointer;
 }
 
-#wpmoly-meta-adv_rating-panels .wpmoly-details-item-title {
+#wpmoly-advanced-rating .wpmoly-details-item-title {
 	border-color: #eee;
+}
+
+#wpmoly-advanced-rating .wpmoly-details-item {
+	min-width: 236px;
 }
 
 #wpmoly-meta-panels .wpmoly-ratings-item-select-stars {

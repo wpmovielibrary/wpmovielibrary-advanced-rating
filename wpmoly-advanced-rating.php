@@ -104,7 +104,9 @@ if ( wpmolyar_requirements_met() ) {
 	WPMovieLibrary_Advanced_Rating::require_wpmoly_first();
 
 	if ( is_admin() ) {
-		//require_once( WPMOLYAR_PATH . 'admin/class-wpmoly-advanced-rating.php' );
+		require_once( WPMOLYAR_PATH . 'admin/class-wpmoly-advanced-rating.php' );
+
+		add_action( 'plugins_loaded', array( 'WPMOLYAR_Advanced_Rating_Admin', 'get_instance' ) );
 	}
 }
 else {
