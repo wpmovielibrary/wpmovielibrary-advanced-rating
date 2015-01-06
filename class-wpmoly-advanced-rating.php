@@ -61,9 +61,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			$this->ratings = array();
 
-			$this->ratings['making'] = array(
+			$this->ratings['rating_making'] = array(
 				'id'       => 'wpmoly-movie-rating-making',
-				'name'     => 'wpmoly_details[rating-making]',
+				'name'     => 'wpmoly_ratings[rating_making]',
 				'type'     => 'select',
 				'title'    => __( 'Making', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s making.', 'wpmovielibrary-advanced-rating' ),
@@ -74,9 +74,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'makingrating' => __( 'makingrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			$this->ratings['story'] = array(
+			$this->ratings['rating_story'] = array(
 				'id'       => 'wpmoly-movie-rating-story',
-				'name'     => 'wpmoly_details[rating-story]',
+				'name'     => 'wpmoly_ratings[rating_story]',
 				'type'     => 'select',
 				'title'    => __( 'Story', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s story.', 'wpmovielibrary-advanced-rating' ),
@@ -87,9 +87,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'storyrating' => __( 'storyrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			$this->ratings['cast'] = array(
+			$this->ratings['rating_cast'] = array(
 				'id'       => 'wpmoly-movie-rating-cast',
-				'name'     => 'wpmoly_details[rating-cast]',
+				'name'     => 'wpmoly_ratings[rating_cast]',
 				'type'     => 'select',
 				'title'    => __( 'Cast', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s cast.', 'wpmovielibrary-advanced-rating' ),
@@ -100,9 +100,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'castrating' => __( 'castrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			$this->ratings['soundtrack'] = array(
+			$this->ratings['rating_soundtrack'] = array(
 				'id'       => 'wpmoly-movie-rating-soundtrack',
-				'name'     => 'wpmoly_details[rating-soundtrack]',
+				'name'     => 'wpmoly_ratings[rating_soundtrack]',
 				'type'     => 'select',
 				'title'    => __( 'Soundtrack', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s original soundtrack.', 'wpmovielibrary-advanced-rating' ),
@@ -113,9 +113,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'soundtrackrating' => __( 'soundtrackrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			$this->ratings['photography'] = array(
+			$this->ratings['rating_photography'] = array(
 				'id'       => 'wpmoly-movie-rating-photography',
-				'name'     => 'wpmoly_details[rating-photography]',
+				'name'     => 'wpmoly_ratings[rating_photography]',
 				'type'     => 'select',
 				'title'    => __( 'Photography', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s photography.', 'wpmovielibrary-advanced-rating' ),
@@ -126,9 +126,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'photographyrating' => __( 'photographyrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			$this->ratings['vfx'] = array(
+			$this->ratings['rating_vfx'] = array(
 				'id'       => 'wpmoly-movie-rating-vfx',
-				'name'     => 'wpmoly_details[rating-vfx]',
+				'name'     => 'wpmoly_ratings[rating_vfx]',
 				'type'     => 'select',
 				'title'    => __( 'VFX', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( 'Rate this movie’s visual effects', 'wpmovielibrary-advanced-rating' ),
@@ -139,9 +139,9 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				'rewrite'  => array( 'vfxrating' => __( 'vfxrating', 'wpmovielibrary-advanced-rating' ) )
 			);
 
-			/*$this->ratings[''] = array(
+			/*$this->ratings['rating_'] = array(
 				'id'       => 'wpmoly-movie-rating-',
-				'name'     => 'wpmoly_details[rating-]',
+				'name'     => 'wpmoly_ratings[rating_]',
 				'type'     => 'select',
 				'title'    => __( '', 'wpmovielibrary-advanced-rating' ),
 				'desc'     => __( '', 'wpmovielibrary-advanced-rating' ),
@@ -172,7 +172,7 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 			add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_styles' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
-			add_action( 'save_post', array( $this, 'save_advanced_rating' ), 10, 3 );
+			add_action( 'save_post_movie', array( $this, 'save_advanced_rating' ), 15, 3 );
 
 			// Create new details
 			add_filter( 'wpmoly_pre_filter_details', array( $this, 'create_ratings' ), 10, 1 );
@@ -525,12 +525,8 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			foreach ( $this->ratings as $slug => $rating ) {
 
-				$_slug = $slug;
-				if ( 'rating' != $slug ) {
-					$slug = "rating_$slug";
-				} else {
-					$this->ratings[ $_slug ]['title'] = __( 'Overall', 'wpmovielibrary-advanced-rating' );
-				}
+				if ( 'rating' == $slug )
+					$this->ratings[ $slug ]['title'] = __( 'Overall', 'wpmovielibrary-advanced-rating' );
 
 				$field_name = $rating['type'];
 				$class_name = "ReduxFramework_{$field_name}";
@@ -549,8 +545,8 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 				$html = ob_get_contents();
 				ob_end_clean();
 
-				$this->ratings[ $_slug ]['html'] = $html;
-				$this->ratings[ $_slug ]['value'] = $value;
+				$this->ratings[ $slug ]['html'] = $html;
+				$this->ratings[ $slug ]['value'] = $value;
 			}
 
 			if ( empty( $average ) ) {
@@ -696,24 +692,19 @@ if ( ! class_exists( 'WPMovieLibrary_Advanced_Rating' ) ) :
 
 			$errors = new WP_Error();
 
-			if ( isset( $_POST['wpmoly_details'] ) && ! empty( $_POST['wpmoly_details'] ) ) {
+			if ( isset( $_POST['wpmoly_ratings'] ) && ! empty( $_POST['wpmoly_ratings'] ) ) {
 
-				$details = $_POST['wpmoly_details'];
+				$ratings = $_POST['wpmoly_ratings'];
 				$allowed = array_keys( $this->ratings );
 
-				foreach ( $details as $slug => $detail ) {
+				foreach ( $ratings as $slug => $rating ) {
 
-					if ( 'rating' != $slug ) {
-						$_slug = str_replace( 'rating-', '', $slug );
-						$slug  = str_replace( 'rating-', 'rating_', $slug );
-					}
-
-					$rating = esc_attr( $detail );
-					if ( in_array( $_slug, $allowed ) && '' != $rating ) {
+					$rating = esc_attr( $rating );
+					if ( in_array( $slug, $allowed ) && '' != $rating ) {
 
 						$rating = update_post_meta( $post_ID, "_wpmoly_movie_$slug", $rating );
 						if ( ! $rating )
-							$errors->add( 'rating-' . $_slug, sprintf( __( 'An error occurred while saving the %s rating.', 'wpmovielibrary-advanced-rating' ), $_slug ) );
+							$errors->add( 'rating-' . $slug, sprintf( __( 'An error occurred while saving the %s value.', 'wpmovielibrary-advanced-rating' ), $slug ) );
 					}
 				}
 			}

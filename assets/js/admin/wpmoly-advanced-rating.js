@@ -76,9 +76,20 @@ _.average = function( numbers ) {
 		 * 
 		 * @return   void
 		 */
-		save: function() {
+		_save: function() {
 
 			this.trigger( 'rating:sync', this );
+			//this.save();
+		},
+
+		/**
+		 * Save the movie. Our job is done!
+		 * 
+		 * @since    1.0
+		 * 
+		 * @return   void
+		 */
+		save: function() {
 
 			var params = {
 				emulateJSON: true,
@@ -327,7 +338,7 @@ _.average = function( numbers ) {
 		empty: function( event ) {
 
 			this.model.set( 'value', 0 );
-			this.model.save();
+			this.model._save();
 			event.preventDefault();
 		},
 
@@ -347,7 +358,7 @@ _.average = function( numbers ) {
 				return;
 
 			this.value = this.update( event );
-			this.model.save();
+			this.model._save();
 		}
 	});
 
@@ -401,7 +412,7 @@ _.average = function( numbers ) {
 
 			_.each( ratings, function( rating ) {
 				var r = rating.get( 'value' );
-				if ( _.isInt( r ) && 0 < r )
+				if ( ! _.isNaN( r ) && 0 < r )
 					average.push( r );
 			}, this );
 
